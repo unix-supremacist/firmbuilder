@@ -14,3 +14,4 @@ pack/modrinth.index.json
 *.log
 pack.json
 tmp/*
+token

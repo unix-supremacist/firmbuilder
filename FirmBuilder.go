@@ -215,7 +215,7 @@ func jsonparse() {
 
 func apiModrinth(projectid string) []ModrinthMod {
 	logger.Println("modrinth api request for projectid " + projectid + " and version " + pack.Loader + ": " + pack.MinecraftVersion)
-	body := request("https://api.modrinth.com/v2/project/" + projectid + "/version?game_versions=[%22" + pack.MinecraftVersion + "%22]&loaders=[%22" + pack.Loader + "%22]")
+	body := request(false, "https://api.modrinth.com/v2/project/" + projectid + "/version?game_versions=[%22" + pack.MinecraftVersion + "%22]&loaders=[%22" + pack.Loader + "%22]")
 	var modrinthMod []ModrinthMod
 	eror(json.Unmarshal(body, &modrinthMod))
 	return modrinthMod
@@ -223,7 +223,7 @@ func apiModrinth(projectid string) []ModrinthMod {
 
 func apiCurseforge(projectid string) CurseforgeMod {
 	logger.Println("curseforge api request for projectid " + projectid + " and version " + pack.Loader + ": " + pack.MinecraftVersion)
-	body := request("http://api-pocket.com/v1/mods/" + projectid + "/files?gameVersion=" + pack.MinecraftVersion + "&modLoaderType=" + pack.Loader)
+	body := request(false, "http://api-pocket.com/v1/mods/" + projectid + "/files?gameVersion=" + pack.MinecraftVersion + "&modLoaderType=" + pack.Loader)
 	var curseforgeMod CurseforgeMod
 	eror(json.Unmarshal(body, &curseforgeMod))
 	return curseforgeMod
@@ -232,10 +232,10 @@ func apiCurseforge(projectid string) CurseforgeMod {
 func apiGithub(projectid string, hash bool) GithubMod {
 	var githubmod GithubMod
 	logger.Println("github api request for repoid " + projectid)
-	body := request("https://api.github.com/repos/" + projectid + "/releases")
+	body := request(true, "https://api.github.com/repos/" + projectid + "/releases")
 	var githubreleases []GithubRelease
 	eror(json.Unmarshal(body, &githubreleases))
-	body = request(githubreleases[0].Assets)
+	body = request(true, githubreleases[0].Assets)
 	var githubassets []GithubAsset
 	eror(json.Unmarshal(body, &githubassets))
 	for _, v := range githubassets {
@@ -271,10 +271,15 @@ func md5file(filepath string) string {
 	return hashmd5
 }
 
-func request(s string) []byte {
+func request(isgithub bool, s string) []byte {
 	req, err := http.NewRequest("GET", s, nil)
 	eror(err)
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36")
+	if isgithub {
+		buf, err := ioutil.ReadFile("token")
+		eror(err)
+		req.Header.Set("Authorization", "Bearer "+string(buf))
+	}
 	client := &http.Client{}
 	res, err := client.Do(req)
 	eror(err)
@@ -334,7 +339,7 @@ func createmcilconfig() {
 			} else {
 				writeline(f, "destination = mods/"+githubMod.Filename+"\n")
 			}
-			if githubMod.MD5 != nil {
+			if len(githubMod.MD5) > 0 {
 				writeline(f, "MD5 = "+githubMod.MD5+"\n")
 			}
 		}
@@ -344,7 +349,7 @@ func createmcilconfig() {
 			Filename := filenamefromurl(pack.Mods[i].Projectid)
 			if len(pack.Mods[i].Destination) > 0 {
 				logger.Println("url destination hard overwrote for project " + pack.Mods[i].Projectid + " to " + pack.Mods[i].Destination)
-				writeline(f, "destination = "+Filename+"\n")
+				writeline(f, "destination = "+pack.Mods[i].Destination+Filename+"\n")
 			} else {
 				writeline(f, "destination = mods/"+Filename+"\n")
 			}
