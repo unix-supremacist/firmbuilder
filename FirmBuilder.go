@@ -324,6 +324,20 @@ func createmcilconfig() {
 				writeline(f, "destination = mods/"+curseforgeMod.Data[0].Filename+"\n")
 			}
 		}
+		if pack.Mods[i].Modtype == "github" {
+			writeline(f, "type = url\n")
+			githubMod := apiGithub(pack.Mods[i].Projectid, pack.hashgit)
+			writeline(f, "url = "+githubMod.Url+"\n")
+			if len(pack.Mods[i].Destination) > 0 {
+				logger.Println("github destination hard overwrote for project "+pack.Mods[i].Projectid+" to "+pack.Mods[i].Destination)
+				writeline(f, "destination = "+pack.Mods[i].Destination+githubMod.Filename+"\n")
+			} else {
+				writeline(f, "destination = mods/"+githubMod.Filename+"\n")
+			}
+			if githubMod.MD5 != nil {
+				writeline(f, "MD5 = "+githubMod.MD5+"\n")
+			}
+		}
 		if pack.Mods[i].Modtype == "url" {
 			writeline(f, "type = url\n")
 			writeline(f, "url = "+pack.Mods[i].Projectid+"\n")
