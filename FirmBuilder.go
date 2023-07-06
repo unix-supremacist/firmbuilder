@@ -116,8 +116,9 @@ func main() {
 		downloadunimixins()
 		createinstance()
 		createmcilconfig()
+	} else {
+		createmrconfig()
 	}
-	createmrconfig()
 	copydirs()
 	downloadloader()
 	if pack.Loader == "forge" && pack.MinecraftVersion == "1.7.10" {
